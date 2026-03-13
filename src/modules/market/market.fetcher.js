@@ -1,21 +1,29 @@
-export async function fetchTokenPrice(symbol = "bitcoin") {
+export async function fetchTokenMetadata(symbol = "bitcoin") {
   try {
     const response = await fetch(
-      `https://api.coingecko.com/api/v3/simple/price?ids=${symbol}&vs_currencies=usd`
+      `https://api.coingecko.com/api/v3/coins/${symbol}`
     );
 
     const data = await response.json();
 
     return {
-      symbol,
-      price: data[symbol]?.usd || null,
-      message: "Real price fetched successfully"
+      id: data.id,
+      symbol: data.symbol,
+      name: data.name,
+      market_cap_rank: data.market_cap_rank,
+      image: data.image?.thumb,
+      market_cap: data.market_data?.market_cap?.usd,
+      message: "Metadata fetched successfully"
     };
   } catch (error) {
     return {
+      id: symbol,
       symbol,
-      price: null,
-      message: "Error fetching price: " + error.message
+      name: null,
+      market_cap_rank: null,
+      image: null,
+      market_cap: null,
+      message: "Error fetching metadata: " + error.message
     };
   }
 }
