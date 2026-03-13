@@ -1,6 +1,7 @@
-import { fetchMarketData } from "./market.fetcher.js";
+import { fetchTokenPrice } from "./market.fetcher.js";
 
-export function getMarketStatus() {
-  const data = fetchMarketData();
-  return `Market module initialized. Fetcher status: ${data.message}`;
+export async function getMarketStatus() {
+  const btc = await fetchTokenPrice("bitcoin");
+
+  return `Market module initialized. BTC price: $${btc.price}`;
 }
