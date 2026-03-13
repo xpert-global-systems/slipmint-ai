@@ -1,0 +1,9 @@
+{
+  "name": "slipmint-ai",
+  "version": "0.0.1",
+  "description": "Core intelligence engine for SlipMint.",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  }
+}
