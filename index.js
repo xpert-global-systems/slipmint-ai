@@ -1,14 +1,14 @@
-const createMarketModule = require("./src/market/marketService");
+const createMarketModule = require("./src/modules/market/market.service");
 const createMomentumNarrativeStrategy = require("./src/strategies/momentumNarrative");
 
 async function main() {
-    // Initialize market module
+    // Initialize REAL market module
     const marketService = createMarketModule();
 
     // Register strategy
     const momentumNarrative = createMomentumNarrativeStrategy({ marketService });
 
-    // Example: run strategy for BTC
+    // Run strategy for BTC
     const result = await momentumNarrative.run("BTCUSDT");
 
     console.log("SlipMint Strategy Output:");
