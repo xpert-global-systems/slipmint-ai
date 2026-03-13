@@ -5,7 +5,7 @@ async function main() {
     // Initialize REAL market module
     const marketService = createMarketModule();
 
-    // Register strategy
+    // Register strategy with real market data
     const momentumNarrative = createMomentumNarrativeStrategy({ marketService });
 
     // Run strategy for BTC
