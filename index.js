@@ -1,5 +1,3 @@
-// index.js
-
 const createMarketModule = require("./src/market/marketService");
 const createMomentumNarrativeStrategy = require("./src/strategies/momentumNarrative");
 
