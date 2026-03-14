@@ -1,18 +1,16 @@
 const createMarketModule = require("./src/modules/market/market.service");
 const createMomentumNarrativeStrategy = require("./src/strategies/momentumNarrative");
+const createMomentumNarrativeAgent = require("./src/agents/momentumNarrativeAgent");
 
 async function main() {
-    // Initialize REAL market module
     const marketService = createMarketModule();
+    const strategy = createMomentumNarrativeStrategy({ marketService });
+    const agent = createMomentumNarrativeAgent({ strategy });
 
-    // Register strategy with real market data
-    const momentumNarrative = createMomentumNarrativeStrategy({ marketService });
+    const signal = await agent.evaluate("BTCUSDT");
 
-    // Run strategy for BTC
-    const result = await momentumNarrative.run("BTCUSDT");
-
-    console.log("SlipMint Strategy Output:");
-    console.log(JSON.stringify(result, null, 2));
+    console.log("SlipMint Agent Signal:");
+    console.log(JSON.stringify(signal, null, 2));
 }
 
 main();
