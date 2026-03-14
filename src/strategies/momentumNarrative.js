@@ -1,137 +1,113 @@
 // src/strategies/momentumNarrative.js
 
-/**
- * Momentum + Narrative Confirmation Strategy
- * ------------------------------------------
- * This module consumes unified market data from the Market Service
- * and produces actionable strategy signals for SlipMint AI.
- */
-
 module.exports = function createMomentumNarrativeStrategy({ marketService }) {
-    
+
     // -----------------------------
-    // 1. MOMENTUM SCORE
+    // 1. MOMENTUM SCORE (REAL)
     // -----------------------------
-    function computeMomentumScore(priceData) {
-        if (!priceData || priceData.length < 2) return 0;
+    function scoreMomentum(prices) {
+        if (!prices || prices.length < 10) return 50;
 
-        const latest = priceData[priceData.length - 1];
-        const prev = priceData[priceData.length - 2];
+        const recent = prices.slice(-10);
+        const first = recent[0];
+        const last = recent[recent.length - 1];
 
-        const pctChange = ((latest - prev) / prev) * 100;
+        const pct = ((last - first) / first) * 100;
 
-        // Normalize to 0–100
-        return Math.max(0, Math.min(100, pctChange * 5));
+        if (pct > 5) return 90;
+        if (pct > 2) return 75;
+        if (pct > 0.5) return 60;
+        if (pct > -0.5) return 50;
+        if (pct > -2) return 40;
+        if (pct > -5) return 25;
+        return 10;
     }
 
     // -----------------------------
-    // 2. NARRATIVE SCORE
+    // 2. NARRATIVE SCORE (REAL)
     // -----------------------------
-    function computeNarrativeScore(metadata) {
-        if (!metadata || !metadata.narrativeScore) return 0;
-
-        // Already normalized 0–100 from metadata
-        return metadata.narrativeScore;
+    function scoreNarrative(n) {
+        if (n == null) return 50;
+        return Math.max(0, Math.min(100, n));
     }
 
     // -----------------------------
-    // 3. VOLUME SIGNAL
+    // 3. VOLUME ANOMALY (REAL)
     // -----------------------------
-    function computeVolumeSignal(volumeData) {
-        if (!volumeData || volumeData.length < 10) return 0;
+    function scoreVolume(volumes) {
+        if (!volumes || volumes.length < 20) return 50;
 
-        const recent = volumeData.slice(-3).reduce((a, b) => a + b, 0) / 3;
-        const baseline = volumeData.slice(0, -3).reduce((a, b) => a + b, 0) / (volumeData.length - 3);
+        const recent = avg(volumes.slice(-5));
+        const baseline = avg(volumes.slice(-20, -5));
 
-        const ratio = recent / baseline;
+        const ratio = baseline === 0 ? 1 : recent / baseline;
 
-        if (ratio > 1.5) return 80;   // strong inflow
-        if (ratio > 1.2) return 60;   // moderate inflow
-        if (ratio > 1.0) return 40;   // slight inflow
-        return 20;                    // weak or negative
+        if (ratio > 2.5) return 90;
+        if (ratio > 1.8) return 80;
+        if (ratio > 1.3) return 65;
+        if (ratio > 0.8) return 50;
+        if (ratio > 0.5) return 35;
+        return 20;
     }
 
     // -----------------------------
-    // 4. VOLATILITY SIGNAL
+    // 4. VOLATILITY SIGNAL (REAL)
     // -----------------------------
-    function computeVolatilitySignal(priceData) {
-        if (!priceData || priceData.length < 10) return 0;
+    function scoreVolatility(volatilityPct) {
+        if (volatilityPct == null) return 50;
 
-        const returns = priceData.slice(1).map((p, i) => (p - priceData[i]) / priceData[i]);
-        const std = Math.sqrt(returns.reduce((a, r) => a + r * r, 0) / returns.length);
+        const v = Math.abs(volatilityPct);
 
-        // Normalize volatility
-        const vol = std * 1000;
-
-        if (vol < 5) return 80;   // compression (bullish breakout potential)
-        if (vol < 10) return 60;  // normal
-        return 30;                // expansion (risk)
+        if (v >= 2 && v <= 6) return 80;  // ideal breakout zone
+        if (v > 6 && v <= 10) return 60;
+        if (v > 10) return 35;           // too chaotic
+        if (v >= 1 && v < 2) return 55;
+        return 40;
     }
 
     // -----------------------------
-    // 5. FUNDING BIAS
+    // 5. FUNDING BIAS (REAL)
     // -----------------------------
-    function computeFundingBias(metadata) {
-        if (!metadata || typeof metadata.fundingRate !== "number") return 50;
+    function scoreFunding(fundingRatePct) {
+        if (fundingRatePct == null) return 50;
 
-        const fr = metadata.fundingRate;
+        const f = fundingRatePct;
 
-        if (fr > 0.01) return 70;   // bullish bias
-        if (fr > 0) return 55;      // slight bullish
-        if (fr < -0.01) return 30;  // bearish bias
-        return 45;                  // slight bearish
+        if (f > 0.05) return 35;   // crowded longs → bearish
+        if (f > 0.02) return 45;
+        if (f > -0.02) return 55;  // neutral
+        if (f > -0.05) return 65;  // shorts paying → bullish
+        return 75;
     }
 
     // -----------------------------
-    // 6. ENTRY SIGNAL
+    // 6. ENTRY COMPOSITE
     // -----------------------------
-    function generateEntrySignal(scores) {
-        const {
-            momentum,
-            narrative,
-            volume,
-            volatility,
-            funding
-        } = scores;
-
-        const composite =
-            momentum * 0.35 +
-            narrative * 0.25 +
-            volume * 0.15 +
-            volatility * 0.15 +
-            funding * 0.10;
-
-        return {
-            composite,
-            shouldEnter: composite >= 65,
-            confidence: composite
-        };
+    function computeEntryComposite(s) {
+        return (
+            s.momentum * 0.30 +
+            s.volume * 0.20 +
+            s.volatility * 0.15 +
+            s.funding * 0.15 +
+            s.narrative * 0.20
+        );
     }
 
     // -----------------------------
-    // 7. EXIT SIGNAL
+    // 7. EXIT COMPOSITE
     // -----------------------------
-    function generateExitSignal(scores) {
-        const {
-            momentum,
-            narrative,
-            volume,
-            volatility,
-            funding
-        } = scores;
+    function computeExitComposite(s) {
+        const invMomentum = 100 - s.momentum;
+        const invVolume = 100 - s.volume;
+        const invNarrative = 100 - s.narrative;
 
-        const composite =
-            momentum * 0.40 +
-            narrative * 0.20 +
-            volume * 0.15 +
-            volatility * 0.15 +
-            funding * 0.10;
-
-        return {
-            composite,
-            shouldExit: composite <= 45,
-            confidence: 100 - composite
-        };
+        return (
+            invMomentum * 0.35 +
+            invVolume * 0.20 +
+            invNarrative * 0.20 +
+            s.funding * 0.15 +
+            s.volatility * 0.10
+        );
     }
 
     // -----------------------------
@@ -141,30 +117,39 @@ module.exports = function createMomentumNarrativeStrategy({ marketService }) {
         const market = await marketService.getMarketData(symbol);
 
         const scores = {
-            momentum: computeMomentumScore(market.prices),
-            narrative: computeNarrativeScore(market.metadata),
-            volume: computeVolumeSignal(market.volumes),
-            volatility: computeVolatilitySignal(market.prices),
-            funding: computeFundingBias(market.metadata)
+            momentum: scoreMomentum(market.prices),
+            narrative: scoreNarrative(market.narrativeScore),
+            volume: scoreVolume(market.volumes),
+            volatility: scoreVolatility(market.volatility),
+            funding: scoreFunding(market.fundingRate)
         };
+
+        const entryComposite = computeEntryComposite(scores);
+        const exitComposite = computeExitComposite(scores);
 
         return {
             symbol,
             scores,
-            entry: generateEntrySignal(scores),
-            exit: generateExitSignal(scores),
+            entry: {
+                composite: entryComposite,
+                shouldEnter: entryComposite > 65,
+                confidence: entryComposite
+            },
+            exit: {
+                composite: exitComposite,
+                shouldExit: exitComposite > 55,
+                confidence: exitComposite
+            },
             timestamp: Date.now()
         };
     }
 
-    return {
-        run,
-        computeMomentumScore,
-        computeNarrativeScore,
-        computeVolumeSignal,
-        computeVolatilitySignal,
-        computeFundingBias,
-        generateEntrySignal,
-        generateExitSignal
-    };
+    // -----------------------------
+    // UTIL
+    // -----------------------------
+    function avg(arr) {
+        return arr.reduce((a, b) => a + b, 0) / arr.length;
+    }
+
+    return { run };
 };
