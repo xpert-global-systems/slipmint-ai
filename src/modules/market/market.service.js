@@ -29,7 +29,6 @@ async function fetchBinanceKlines(symbol) {
     const prices = res.data.map(c => parseFloat(c[4])); // close prices
     const volumes = res.data.map(c => parseFloat(c[5]));
 
-    // simple volatility calc
     const volatility =
         (Math.max(...prices) - Math.min(...prices)) /
         prices[prices.length - 1] * 100;
@@ -40,17 +39,15 @@ async function fetchBinanceKlines(symbol) {
 async function fetchBinanceFunding(symbol) {
     const url = `https://fapi.binance.com/fapi/v1/fundingRate?symbol=${symbol}&limit=1`;
     const res = await axios.get(url);
-    return parseFloat(res.data[0].fundingRate) * 100; // convert to %
+    return parseFloat(res.data[0].fundingRate) * 100;
 }
 
 async function fetchNewsNarrative(symbol) {
-    // Simple narrative scoring using CryptoPanic (free tier)
     const url = `https://cryptopanic.com/api/v1/posts/?auth_token=demo&currencies=BTC`;
     const res = await axios.get(url);
 
     const posts = res.data.results || [];
-
-    let score = 50; // neutral baseline
+    let score = 50;
 
     posts.forEach(p => {
         if (p.sentiment === "positive") score += 5;
