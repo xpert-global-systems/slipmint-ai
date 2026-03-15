@@ -7,10 +7,10 @@ async function main() {
     const strategy = createMomentumNarrativeStrategy({ marketService });
     const agent = createMomentumNarrativeAgent({ strategy });
 
-    const signal = await agent.evaluate("BTCUSDT");
+    const symbol = "BTCUSDT";
+    const signal = await agent.evaluate(symbol);
 
-    console.log("SlipMint Agent Signal:");
-    console.log(JSON.stringify(signal, null, 2));
+    console.log("SlipMint Signal:", signal);
 }
 
 main();
