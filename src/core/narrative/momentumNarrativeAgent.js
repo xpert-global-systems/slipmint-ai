@@ -1,5 +1,3 @@
-// src/agents/momentumNarrativeAgent.js
-
 /**
  * Momentum + Narrative Agent
  * --------------------------
@@ -7,7 +5,7 @@
  * decision-focused signals for SlipMint AI.
  */
 
-module.exports = function createMomentumNarrativeAgent({ strategy }) {
+export default function createMomentumNarrativeAgent({ strategy }) {
     async function evaluate(symbol = "BTCUSDT") {
         const result = await strategy.run(symbol);
 
@@ -28,7 +26,7 @@ module.exports = function createMomentumNarrativeAgent({ strategy }) {
     }
 
     return { evaluate };
-};
+}
 
 // -----------------------------
 // DECISION LOGIC
@@ -38,7 +36,6 @@ function decideAction({ entry, exit }) {
     if (entry.shouldEnter && !exit.shouldExit) return "BUY";
     if (exit.shouldExit && !entry.shouldEnter) return "SELL";
 
-    // conflict or weak signals → stay flat
     return "HOLD";
 }
 
@@ -46,7 +43,6 @@ function computeConfidence({ entry, exit, decision }) {
     if (decision === "BUY") return clamp(entry.composite, 0, 100);
     if (decision === "SELL") return clamp(exit.composite, 0, 100);
 
-    // HOLD: confidence is inverse of max pressure
     const pressure = Math.max(entry.composite, exit.composite);
     return clamp(100 - pressure, 0, 100);
 }
