@@ -2,7 +2,7 @@ import axios from "axios";
 import { config } from "../../config/env.js";
 
 export async function sendDiscordAlert(message, embed = null) {
-    if (!config.alerts.discordWebhook) {
+    if (!config.system.discordWebhook) {
         console.error("❌ No Discord webhook configured.");
         return;
     }
