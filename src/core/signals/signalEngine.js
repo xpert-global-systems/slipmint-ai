@@ -1,4 +1,4 @@
-export default function createMomentumNarrativeAgent() {
+export default function createSignalEngine() {
     return {
         /**
          * Evaluates the deep market data and returns a calculated Confidence Score.
