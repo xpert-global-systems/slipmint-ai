@@ -82,7 +82,7 @@ async function fetchNewsNarrative(symbol) {
     const coin = symbol.replace("USDT", ""); 
     
     // Note: Replace "demo" with your actual API key for production
-    const url = `https://cryptopanic.com/api/v1/posts/?auth_token=demo&currencies=${coin}`;
+    const url = `https://cryptopanic.com/api/v1/posts/?auth_token=${process.env.CRYPTOPANIC_API_KEY || 'demo'}&currencies=${coin}`;
     
     try {
         const res = await axios.get(url);
