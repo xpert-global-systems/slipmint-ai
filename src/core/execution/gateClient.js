@@ -5,41 +5,69 @@ import { sendDiscordAlert } from '../alerts/discord.js';
 class XpertTradingEngine {
   constructor() {
     this.client = new GateApi.ApiClient();
-    this.client.setApiKeySecret(config.gate.apiKey, config.gate.apiSecret);
+
+    // IMPORTANT: Gate.io requires API KEY + SECRET + PASSPHRASE
+    this.client.setApiKeySecret(
+      config.gate.apiKey,
+      config.gate.apiSecret,
+      config.gate.passphrase
+    );
+
     this.futuresApi = new GateApi.FuturesApi(this.client);
     this.settle = config.trading.settle || 'usdt';
   }
 
+  // -----------------------------
+  // SET LEVERAGE
+  // -----------------------------
   async setLeverage(contract, leverageX) {
     try {
-      await this.futuresApi.updatePositionLeverage(this.settle, contract, leverageX);
+      await this.futuresApi.updatePositionLeverage(
+        this.settle,
+        contract,
+        { leverage: leverageX }
+      );
+
       console.log(`⚙️ [SYSTEM] Leverage for ${contract} set to ${leverageX}x`);
     } catch (error) {
-      console.error(`⚠️ [WARNING] Could not set leverage:`, error.response ? error.response.body : error.message);
+      const err = error.response ? error.response.body : error.message;
+      console.error(`⚠️ [WARNING] Could not set leverage:`, err);
 
       await sendDiscordAlert(
         `⚠️ **LEVERAGE ERROR**  
 Contract: ${contract}  
-Error: ${error.response ? JSON.stringify(error.response.body) : error.message}`
+Error: ${JSON.stringify(err)}`
       );
     }
   }
 
+  // -----------------------------
+  // EXECUTE MARKET ORDER
+  // -----------------------------
   async executeMarketOrder(signal) {
     console.log(`🚀 [XPERT ENGINE] Executing ${signal.direction} on ${signal.contract}...`);
 
     try {
+      // Set leverage first
       await this.setLeverage(signal.contract, signal.leverage);
 
       const order = new GateApi.FuturesOrder();
       order.contract = signal.contract;
-      order.size = signal.direction === 'BUY' ? signal.size : -Math.abs(signal.size);
-      order.price = '0';
-      order.tif = 'ioc';
+      order.size = signal.direction === 'BUY'
+        ? signal.size
+        : -Math.abs(signal.size);
 
-      const response = await this.futuresApi.createFuturesOrder(this.settle, order);
+      order.price = '0'; // Market order
+      order.tif = 'ioc'; // Immediate or cancel
 
-      console.log(`✅ [TRADE OPENED] Order ID: ${response.body.id} | Status: ${response.body.status}`);
+      const response = await this.futuresApi.createFuturesOrder(
+        this.settle,
+        order
+      );
+
+      console.log(
+        `✅ [TRADE OPENED] Order ID: ${response.body.id} | Status: ${response.body.status}`
+      );
 
       await sendDiscordAlert(
         `🚀 **TRADE EXECUTED**  
@@ -53,30 +81,37 @@ Error: ${error.response ? JSON.stringify(error.response.body) : error.message}`
       return response.body;
 
     } catch (error) {
-      console.error("❌ [TRADE FATAL ERROR]:", error.response ? error.response.body : error.message);
+      const err = error.response ? error.response.body : error.message;
+
+      console.error("❌ [TRADE FATAL ERROR]:", err);
 
       await sendDiscordAlert(
         `❌ **TRADE ERROR**  
 Pair: ${signal.contract}  
-Error: ${error.response ? JSON.stringify(error.response.body) : error.message}`
+Error: ${JSON.stringify(err)}`
       );
 
       throw error;
     }
   }
 
-  // NEW: Fetch open position
+  // -----------------------------
+  // GET OPEN POSITION
+  // -----------------------------
   async getPosition(contract) {
     try {
       const res = await this.futuresApi.getPosition(this.settle, contract);
       return res.body;
     } catch (err) {
-      console.error(`❌ [POSITION ERROR]`, err.response ? err.response.body : err.message);
+      const e = err.response ? err.response.body : err.message;
+      console.error(`❌ [POSITION ERROR]`, e);
       return null;
     }
   }
 
-  // NEW: Close position at market
+  // -----------------------------
+  // CLOSE POSITION AT MARKET
+  // -----------------------------
   async closePosition(contract) {
     try {
       const pos = await this.getPosition(contract);
@@ -88,7 +123,10 @@ Error: ${error.response ? JSON.stringify(error.response.body) : error.message}`
       order.price = '0';
       order.tif = 'ioc';
 
-      const res = await this.futuresApi.createFuturesOrder(this.settle, order);
+      const res = await this.futuresApi.createFuturesOrder(
+        this.settle,
+        order
+      );
 
       console.log(`🔻 [POSITION CLOSED] ${contract} | Order ID: ${res.body.id}`);
 
@@ -102,12 +140,14 @@ Order ID: ${res.body.id}`
       return res.body;
 
     } catch (err) {
-      console.error(`❌ [CLOSE ERROR]`, err.response ? err.response.body : err.message);
+      const e = err.response ? err.response.body : err.message;
+
+      console.error(`❌ [CLOSE ERROR]`, e);
 
       await sendDiscordAlert(
         `❌ **CLOSE POSITION ERROR**  
 Contract: ${contract}  
-Error: ${err.response ? JSON.stringify(err.response.body) : err.message}`
+Error: ${JSON.stringify(e)}`
       );
 
       return null;
