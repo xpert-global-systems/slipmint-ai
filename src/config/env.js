@@ -20,7 +20,7 @@ export const config = {
     
     // --- NEW: RISK MANAGEMENT PROTOCOLS ---
     // Protects your capital by setting hard limits, even if a bad signal comes in.
-    maxLeverage: parseInt(process.env.MAX_LEVERAGE) || 20, 
+    maxLeverage: parseInt(process.env.MAX_LEVERAGE, 10) || 20,
     defaultTpPercent: parseFloat(process.env.TAKE_PROFIT_PERCENT) || 5.0, // 5% Take Profit
     defaultSlPercent: parseFloat(process.env.STOP_LOSS_PERCENT) || 2.0,   // 2% Stop Loss
   },
