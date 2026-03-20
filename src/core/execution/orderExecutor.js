@@ -1,4 +1,4 @@
-import { futuresApi } from './gateClient.js';
+import { tradingEngine } from './gateClient.js';
 import { config } from '../../config/env.js';
 
 /**
