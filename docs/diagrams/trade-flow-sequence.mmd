@@ -1,0 +1,35 @@
+sequenceDiagram
+    autonumber
+    participant MF as Market Fetcher
+    participant MD as Market Data
+    participant IE as Indicator Engine
+    participant SE as Signal Engine
+    participant RE as Risk Engine
+    participant NA as Narrative Agent
+    participant OE as Order Executor
+    participant GC as Gate Client
+    participant EX as Exchange
+
+    MF->>EX: Request latest market data
+    EX-->>MF: Return price feed (OHLCV, orderbook, depth)
+    MF->>MD: Normalize and store market data
+
+    MD->>IE: Provide cleaned market data
+    IE-->>IE: Compute indicators (RSI, MA, volatility)
+    IE->>SE: Send indicator snapshot
+
+    SE-->>SE: Evaluate strategy conditions
+    SE->>RE: Emit potential trade signal
+
+    RE-->>RE: Apply risk rules (exposure, max loss, cooldown)
+    RE->>NA: Send validated signal
+
+    NA-->>NA: Generate narrative context and confidence score
+    NA->>OE: Approve trade with narrative confidence
+
+    OE->>GC: Build order payload (size, side, type)
+    GC->>EX: Submit order to exchange
+    EX-->>GC: Return order confirmation
+
+    GC->>OE: Execution result
+    OE->>MD: Log trade and update state
