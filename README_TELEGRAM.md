@@ -7,11 +7,11 @@ It is designed to integrate with the SlipMint AI ecosystem and runs in its own b
 
 ## 🚀 Features
 
-- Real-time Ethereum wallet tracking
-- Alerts for large ETH transactions (configurable minimum)
-- Supports multiple wallets
-- Easily extendable to token tracking
-- Fully integrated with SlipMint AI for advanced analytics and future AI-driven strategies
+- Real-time Ethereum wallet tracking  
+- Alerts for large ETH transactions (configurable minimum)  
+- Supports multiple wallets  
+- Easily extendable to token tracking  
+- Fully integrated with SlipMint AI for advanced analytics and future AI-driven strategies  
 
 ---
 
@@ -20,7 +20,7 @@ It is designed to integrate with the SlipMint AI ecosystem and runs in its own b
 ```mermaid
 flowchart LR
     A[Ethereum Blockchain] -->|RPC calls| B[GetBlock RPC Node]
-    B --> C[Telegram Bot (Node.js)]
-    C --> D[Telegram Users / Channel]
-    C --> E[SlipMint AI (optional)]
-    E -->|Wallet & Market Analysis| C
+    B --> C[Telegram Bot NodeJS]
+    C --> D[Telegram Users or Channel]
+    C --> E[SlipMint AI Optional]
+    E -->|Wallet and Market Analysis| C
