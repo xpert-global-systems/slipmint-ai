@@ -10,7 +10,7 @@ async function main() {
     const symbol = "BTCUSDT";
     const signal = await agent.evaluate(symbol);
 
-    console.log("SlipMint Signal:", signal);
+    logger.info("SlipMint Signal", { signal });
 }
 
 main();
