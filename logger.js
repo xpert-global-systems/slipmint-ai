@@ -9,7 +9,7 @@ const logger = winston.createLogger({
   defaultMeta: { service: 'slipmint-ai' },
   transports: [
     new winston.transports.Console({
-      format: winston.format.simple(),
+      format: winston.format.prettyPrint(),
     }),
     new winston.transports.File({ filename: 'error.log', level: 'error' }),
     new winston.transports.File({ filename: 'combined.log' }),
